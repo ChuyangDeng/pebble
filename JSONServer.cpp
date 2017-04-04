@@ -19,12 +19,6 @@ http://www.binarii.com/files/papers/c_sockets.txt
 #include <errno.h>
 #include <string>
 #include <iostream>
-<<<<<<< HEAD
-#include <map>
-#include <cstdio>
-#include <ctime>
-=======
->>>>>>> a39303314b81afa9f16ac22d3f6628348c18a033
 using namespace std;
 
 /*
@@ -38,24 +32,9 @@ void configure(int fd) {
   tcsetattr(fd, TCSANOW, &pts);
 }
 
-<<<<<<< HEAD
-double getAverage() {
-  double total;
-  int count;
-  for (map<clock_t, string>::iterator it = temperatures.begin(); it != temperatures.end(); it++) {
-    total += atof(it->second.c_str());
-    count += 1;
-  }
-  cout << "*****"<<total << endl;
-  cout << "&&&&&"<<count << endl;
-  return total / count;
-}
-
-=======
->>>>>>> a39303314b81afa9f16ac22d3f6628348c18a033
 string readTemp(int fd) {
   
-// cout < "?????"
+
   /*
     Write the rest of the program below, using the read and write system calls.
   */
@@ -100,7 +79,6 @@ string readTemp(int fd) {
 
 int start_server(int PORT_NUMBER, char* file_name)
 {
-      
       int fd2 = open(file_name, O_RDWR | O_NOCTTY | O_NDELAY);
   
       if (fd2 < 0) {
@@ -145,19 +123,15 @@ int start_server(int PORT_NUMBER, char* file_name)
 	perror("Listen");
 	exit(1);
       }
-// cout << "nnnnn";
           
       // once you get here, the server is set up and about to start listening
       cout << endl << "Server configured to listen on port " << PORT_NUMBER << endl;
-           
       fflush(stdout);
-cout << "nnnnn";
+     
 
       // 4. accept: wait here until we get a connection on that port
       int sin_size = sizeof(struct sockaddr_in);
-      cout << "vvvvvvvvv";
       int fd = accept(sock, (struct sockaddr *)&client_addr,(socklen_t *)&sin_size);
-      
       cout << "Server got a connection from " << inet_ntoa(client_addr.sin_addr) << ":" << ntohs(client_addr.sin_port) << endl;
       
       // buffer to read data into
@@ -180,22 +154,17 @@ cout << "nnnnn";
       */
       // while (true) {
 
-<<<<<<< HEAD
-        // TODO:
-        // cout << "aaa " << temp2 << endl;
-=======
         string temp2 = readTemp(fd2);
         cout << "aaa " << temp2 << endl;
->>>>>>> a39303314b81afa9f16ac22d3f6628348c18a033
 // "{\n\"name\": \"cit595\"\n}\n";
       
-         // if (temp2.length() >= 2) {
-          string reply = "{\n\"name\": \"test\"\n}\n";
+         if (temp2.length() >= 2) {
+          string reply = "{\n\"name\": \"" + temp2 + "\"\n}\n";
       
         // 6. send: send the message over the socket
         // note that the second argument is a char*, and the third is the number of chars
           send(fd, reply.c_str(), reply.length(), 0);
-        // } 
+        } 
        // }
      
       //printf("Server sent message: %s\n", reply);
@@ -218,12 +187,9 @@ int main(int argc, char *argv[])
       cout << endl << "Usage: server [port_number]" << endl;
       exit(0);
     }
-cout << "11111" << endl;
 
   int PORT_NUMBER = atoi(argv[1]);
-cout << "2222222\n"; 
- char* file_name = argv[2];
- cout << "33333333\n"; 
+  char* file_name = argv[2];
   start_server(PORT_NUMBER, file_name);
 }
 
