@@ -19,13 +19,14 @@ http://www.binarii.com/files/papers/c_sockets.txt
 #include <errno.h>
 #include <string>
 #include <iostream>
+<<<<<<< HEAD
 #include <map>
 #include <cstdio>
 #include <ctime>
+=======
+>>>>>>> a39303314b81afa9f16ac22d3f6628348c18a033
 using namespace std;
 
-
-map<clock_t, string> temperatures;
 /*
 This code configures the file descriptor for use as a serial port.
 */
@@ -37,6 +38,7 @@ void configure(int fd) {
   tcsetattr(fd, TCSANOW, &pts);
 }
 
+<<<<<<< HEAD
 double getAverage() {
   double total;
   int count;
@@ -49,12 +51,16 @@ double getAverage() {
   return total / count;
 }
 
+=======
+>>>>>>> a39303314b81afa9f16ac22d3f6628348c18a033
 string readTemp(int fd) {
   
 // cout < "?????"
   /*
     Write the rest of the program below, using the read and write system calls.
   */
+  
+  
   string info = "";
   
   bool inSideDegree;
@@ -78,7 +84,7 @@ string readTemp(int fd) {
       }
       else if(inSideDegree == false && info.length() >= 2){
         cout << "~~~ " << info;
-          temperatures.insert(pair<clock_t, string>(clock(), info));
+          return info;
         }
         else{
           inSideDegree = false;
@@ -130,14 +136,14 @@ int start_server(int PORT_NUMBER, char* file_name)
       
       // 2. bind: use the socket and associate it with the port number
       if (bind(sock, (struct sockaddr *)&server_addr, sizeof(struct sockaddr)) == -1) {
-	       perror("Unable to bind");
-	       exit(1);
+	perror("Unable to bind");
+	exit(1);
       }
 
       // 3. listen: indicates that we want to listn to the port to which we bound; second arg is number of allowed connections
       if (listen(sock, 5) == -1) {
-	       perror("Listen");
-	       exit(1);
+	perror("Listen");
+	exit(1);
       }
 // cout << "nnnnn";
           
@@ -174,8 +180,13 @@ cout << "nnnnn";
       */
       // while (true) {
 
+<<<<<<< HEAD
         // TODO:
         // cout << "aaa " << temp2 << endl;
+=======
+        string temp2 = readTemp(fd2);
+        cout << "aaa " << temp2 << endl;
+>>>>>>> a39303314b81afa9f16ac22d3f6628348c18a033
 // "{\n\"name\": \"cit595\"\n}\n";
       
          // if (temp2.length() >= 2) {
