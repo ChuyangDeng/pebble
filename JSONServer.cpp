@@ -19,8 +19,13 @@ http://www.binarii.com/files/papers/c_sockets.txt
 #include <errno.h>
 #include <string>
 #include <iostream>
+#include <cstdio>
+#include <ctime>
+#include <map>
 using namespace std;
 
+
+map<clock_t, double> temperatures;
 /*
 This code configures the file descriptor for use as a serial port.
 */
@@ -32,19 +37,16 @@ void configure(int fd) {
   tcsetattr(fd, TCSANOW, &pts);
 }
 
-string readTemp(int fd) {
-  
-
+void readTemp(int fd) {
   /*
     Write the rest of the program below, using the read and write system calls.
   */
-  
-  
+  int count = 0;
   string info = "";
   
   bool inSideDegree;
 
-  while (true) {
+  while (count < 200) {
     char buf[1];
     int bytes_read = read(fd, buf,1);
     //cout << bytes_read << "\n\n\n";
@@ -63,18 +65,25 @@ string readTemp(int fd) {
       }
       else if(inSideDegree == false && info.length() >= 2){
         cout << "~~~ " << info;
-          return info;
+          temperatures.insert(pair<clock_t, double>(clock(), atof(info.c_str())));
         }
         else{
           inSideDegree = false;
         }
-
-        // info = "";
-        // inSideDegree = false;
     }
-    
+    count++;
   }
 
+}
+
+double getAverage() {
+  double total;
+  int count;
+  for (map<clock_t, double>::iterator it = temperatures.begin(); it != temperatures.end(); it++) {
+    total += it->second;
+    count++;
+  }
+  return total / count;
 }
 
 int start_server(int PORT_NUMBER, char* file_name)
@@ -154,17 +163,17 @@ int start_server(int PORT_NUMBER, char* file_name)
       */
       // while (true) {
 
-        string temp2 = readTemp(fd2);
-        cout << "aaa " << temp2 << endl;
+        readTemp(fd2);
+        double avg = getAverage();
+        cout << "aaa " << avg << endl;
 // "{\n\"name\": \"cit595\"\n}\n";
-      
-         if (temp2.length() >= 2) {
-          string reply = "{\n\"name\": \"" + temp2 + "\"\n}\n";
+
+          string reply = "{\n\"name\": \"" + avg + "\"\n}\n";
       
         // 6. send: send the message over the socket
         // note that the second argument is a char*, and the third is the number of chars
           send(fd, reply.c_str(), reply.length(), 0);
-        } 
+
        // }
      
       //printf("Server sent message: %s\n", reply);
