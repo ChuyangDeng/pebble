@@ -46,7 +46,7 @@ void readTemp(int fd) {
   
   bool inSideDegree;
 
-  while (count < 200) {
+  while (count < 100) {
     char buf[1];
     int bytes_read = read(fd, buf,1);
     //cout << bytes_read << "\n\n\n";
@@ -83,6 +83,8 @@ double getAverage() {
     total += it->second;
     count++;
   }
+  cout << "total: " << total << endl;
+  cout << "count: " << count << endl;
   return total / count;
 }
 
@@ -168,12 +170,9 @@ int start_server(int PORT_NUMBER, char* file_name)
         cout << "aaa " << avg << endl;
 // "{\n\"name\": \"cit595\"\n}\n";
 
-<<<<<<< HEAD
 
-          string reply = "{\n\"name\": \"" + avg + "\"\n}\n";
-=======
           string reply = "{\n\"name\": " + to_string(avg) + "\n}\n";
->>>>>>> 8be269380928db7427c72312ddef997760a1be78
+
       
         // 6. send: send the message over the socket
         // note that the second argument is a char*, and the third is the number of chars
