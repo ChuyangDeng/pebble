@@ -168,6 +168,7 @@ int start_server(int PORT_NUMBER, char* file_name)
         cout << "aaa " << avg << endl;
 // "{\n\"name\": \"cit595\"\n}\n";
 
+
           string reply = "{\n\"name\": \"" + avg + "\"\n}\n";
       
         // 6. send: send the message over the socket
