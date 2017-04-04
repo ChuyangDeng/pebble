@@ -64,14 +64,15 @@ void readTemp(int fd) {
         info += buf[0];
       }
       else if(inSideDegree == false && info.length() >= 2){
-        cout << "~~~ " << atof(info.c_str());
+          cout << "~~~ " << atof(info.c_str());
           temperatures.insert(pair<clock_t, double>(clock(), atof(info.c_str())));
+          inSideDegree = true;
+          count++;
         }
         else{
           inSideDegree = false;
         }
     }
-    count++;
   }
 
 }
