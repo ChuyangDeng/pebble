@@ -28,6 +28,8 @@ using namespace std;
 
 
 queue<double> temperatures;
+double average = 0.0;
+double total = 0.0;
 bool stop = false;
 int file_descriptor = 0;
 // int count = 100;
@@ -75,7 +77,9 @@ void readTemp() {
       }
       else if(inSideDegree == false && info.length() >= 2){
           cout << "~~~ " << atof(info.c_str());
+          total += atof(info.c_str());
           temperatures.push(atof(info.c_str()));
+          getAverage();
           inSideDegree = true;
           if (stop) break;
         }
@@ -87,17 +91,16 @@ void readTemp() {
 
 }
 
-double getAverage() {
-  double total;
+void getAverage() {
   int size = temperatures.size();
-  while (!temperatures.empty()) {
-    total += temperatures.front();
-    temperatures.pop();
+  if (size > 3600) {
+    total -= temperatures.front();
+    size = 3600;
   }
+  average = total / size;
   cout << "total: " << total << endl;
   //cout << "count: " << count << endl;
-  cout << "average: " << total / size << endl;
-  return total / size;
+  cout << "average: " << average << endl;
 }
 
 int start_server(int PORT_NUMBER, char* file_name)
@@ -138,14 +141,14 @@ int start_server(int PORT_NUMBER, char* file_name)
       
       // 2. bind: use the socket and associate it with the port number
       if (bind(sock, (struct sockaddr *)&server_addr, sizeof(struct sockaddr)) == -1) {
-	perror("Unable to bind");
-	exit(1);
+	         perror("Unable to bind");
+	         exit(1);
       }
 
       // 3. listen: indicates that we want to listn to the port to which we bound; second arg is number of allowed connections
       if (listen(sock, 5) == -1) {
-	perror("Listen");
-	exit(1);
+	       perror("Listen");
+	       exit(1);
       }
 
       this_thread::sleep_for(chrono::seconds(5));
@@ -153,18 +156,16 @@ int start_server(int PORT_NUMBER, char* file_name)
         thread timing (timer);
         thread getTemp (readTemp);
 
-        timing.join();
-        getTemp.join();
+        // timing.join();
+        // getTemp.join();
 
-        double avg = getAverage();
-        string avarage = to_string(avg);
           
       // once you get here, the server is set up and about to start listening
       cout << endl << "Server configured to listen on port " << PORT_NUMBER << endl;
       fflush(stdout);
      
-
-      // 4. accept: wait here until we get a connection on that port
+      while (true) {
+        // 4. accept: wait here until we get a connection on that port
       int sin_size = sizeof(struct sockaddr_in);
       int fd = accept(sock, (struct sockaddr *)&client_addr,(socklen_t *)&sin_size);
       cout << "Server got a connection from " << inet_ntoa(client_addr.sin_addr) << ":" << ntohs(client_addr.sin_port) << endl;
@@ -187,18 +188,20 @@ int start_server(int PORT_NUMBER, char* file_name)
            "name": "cit595"
         }
       */
-
-        cout << "aaa " << avarage << endl;
+        string avgStr = to_string(average);
+        cout << "aaa " << avgStr << endl;
 // "{\n\"name\": \"cit595\"\n}\n";
 
 
           // string reply = "{\n\"name\": " + "" + "\n}\n";
-        string reply = "{\n\"name\": \"" + avarage + "\"\n}\n";
+        string reply = "{\n\"name\": \"" + avgStr + "\"\n}\n";
       
         // 6. send: send the message over the socket
         // note that the second argument is a char*, and the third is the number of chars
           send(fd, reply.c_str(), reply.length(), 0);
 
+      }
+    
        // }
      
       //printf("Server sent message: %s\n", reply);
