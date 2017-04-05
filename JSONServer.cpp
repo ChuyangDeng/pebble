@@ -32,6 +32,7 @@ double average = 0.0;
 double total = 0.0;
 bool stop = false;
 int file_descriptor = 0;
+ char* file_name;
 // int count = 100;
 /*
 This code configures the file descriptor for use as a serial port.
@@ -49,48 +50,6 @@ void timer() {
   stop = true;
 }
 
-void readTemp() {
-  /*
-    Write the rest of the program below, using the read and write system calls.
-  */
-  int i = 0;
-  string info = "";
-  
-  bool inSideDegree;
-
-  while (true) {
-    char buf[1];
-    int bytes_read = read(file_descriptor, buf,1);
-    //cout << bytes_read << "\n\n\n";
-    if(bytes_read <= 0) {
-      continue;
-    }
-    if (file_descriptor > 0) {
-       // cout << "  " << buf[0];
-      if (buf[0]  >= '0' && buf[0]  <= '9' ) {
-
-        info += buf[0];
-        inSideDegree = true;
-      }
-      else if(inSideDegree == true && buf[0] == '.'){
-        info += buf[0];
-      }
-      else if(inSideDegree == false && info.length() >= 2){
-          cout << "~~~ " << atof(info.c_str());
-          total += atof(info.c_str());
-          temperatures.push(atof(info.c_str()));
-          getAverage();
-          inSideDegree = true;
-          if (stop) break;
-        }
-        else{
-          inSideDegree = false;
-        }
-    }
-  }
-
-}
-
 void getAverage() {
   int size = temperatures.size();
   if (size > 3600) {
@@ -103,20 +62,19 @@ void getAverage() {
   cout << "average: " << average << endl;
 }
 
+// void readTemp() {
+  
+//     Write the rest of the program below, using the read and write system calls.
+  
+  
+
+// }
+
+
+
 int start_server(int PORT_NUMBER, char* file_name)
 {
-      int fd2 = open(file_name, O_RDWR | O_NOCTTY | O_NDELAY);
-      file_descriptor = fd2; /****************************/
-
-      if (fd2 < 0) {
-        perror("Could not open file");
-        exit(1);
-      }
-      else {
-        cout << "Successfully opened " << file_name << " for reading/writing" << endl;
-      }
-
-      configure(fd2);
+      
       // structs to represent the server and client
       struct sockaddr_in server_addr,client_addr;    
       
@@ -153,8 +111,8 @@ int start_server(int PORT_NUMBER, char* file_name)
 
       this_thread::sleep_for(chrono::seconds(5));
 
-        thread timing (timer);
-        thread getTemp (readTemp);
+        // thread timing (timer);
+        // thread getTemp (readTemp);
 
         // timing.join();
         // getTemp.join();
@@ -163,11 +121,11 @@ int start_server(int PORT_NUMBER, char* file_name)
       // once you get here, the server is set up and about to start listening
       cout << endl << "Server configured to listen on port " << PORT_NUMBER << endl;
       fflush(stdout);
-     
+     int fd;
       while (true) {
         // 4. accept: wait here until we get a connection on that port
       int sin_size = sizeof(struct sockaddr_in);
-      int fd = accept(sock, (struct sockaddr *)&client_addr,(socklen_t *)&sin_size);
+      fd = accept(sock, (struct sockaddr *)&client_addr,(socklen_t *)&sin_size);
       cout << "Server got a connection from " << inet_ntoa(client_addr.sin_addr) << ":" << ntohs(client_addr.sin_port) << endl;
       
       // buffer to read data into
@@ -199,6 +157,7 @@ int start_server(int PORT_NUMBER, char* file_name)
         // 6. send: send the message over the socket
         // note that the second argument is a char*, and the third is the number of chars
           send(fd, reply.c_str(), reply.length(), 0);
+          close(fd);
 
       }
     
@@ -207,14 +166,65 @@ int start_server(int PORT_NUMBER, char* file_name)
       //printf("Server sent message: %s\n", reply);
 
       // 7. close: close the socket connection
-      close(fd);
       close(sock);
       cout << "Server closed connection" << endl;
   
       return 0;
 } 
 
+void* read_temp(void* ){
+  int fd2 = open(file_name, O_RDWR | O_NOCTTY | O_NDELAY);
+      file_descriptor = fd2; /****************************/
 
+      if (fd2 < 0) {
+        perror("Could not open file");
+        exit(1);
+      }
+      else {
+        cout << "Successfully opened " << file_name << " for reading/writing" << endl;
+      }
+
+      configure(fd2);
+
+      int i = 0;
+  string info = "";
+  
+  bool inSideDegree;
+
+  while (true) {
+    char buf[1];
+    int bytes_read = read(file_descriptor, buf,1);
+    //cout << bytes_read << "\n\n\n";
+    if(bytes_read <= 0) {
+      continue;
+    }
+    if (file_descriptor > 0) {
+       cout << "  " << buf[0];
+      if (buf[0]  >= '0' && buf[0]  <= '9' ) {
+
+        info += buf[0];
+        inSideDegree = true;
+      }
+      else if(inSideDegree == true && buf[0] == '.'){
+        info += buf[0];
+      }
+      else if(inSideDegree == false && info.length() >= 2){
+          cout << "~~~ " << atof(info.c_str());
+          total += atof(info.c_str());
+          temperatures.push(atof(info.c_str()));
+          average = atof(info.c_str());
+          // cout << average << endl;
+          inSideDegree = true;
+          info = "";
+          // if (stop) break;
+        }
+        else{
+          inSideDegree = false;
+        }
+    }
+  }
+  pthread_exit(NULL);
+}
 
 int main(int argc, char *argv[])
 {
@@ -225,7 +235,15 @@ int main(int argc, char *argv[])
       exit(0);
     }
   int PORT_NUMBER = atoi(argv[1]);
-  char* file_name = argv[2];
+  file_name = argv[2];
+
+  // pthread_mutex_init(&lock, NULL);
+
+  pthread_t thread_id2;
+  pthread_create(&thread_id2, NULL, read_temp, NULL);
+
+
+
   start_server(PORT_NUMBER, file_name);
 }
 
