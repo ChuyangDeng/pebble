@@ -20,14 +20,16 @@ http://www.binarii.com/files/papers/c_sockets.txt
 #include <string>
 #include <iostream>
 #include <cstdio>
-#include <ctime>
 #include <map>
 #include <thread>
 #include <chrono>
+#include <queue>
 using namespace std;
 
 
-map<clock_t, double> temperatures;
+queue<double> temperatures;
+bool stop = false;
+int file_descriptor = 0;
 // int count = 100;
 /*
 This code configures the file descriptor for use as a serial port.
@@ -40,7 +42,12 @@ void configure(int fd) {
   tcsetattr(fd, TCSANOW, &pts);
 }
 
-void readTemp(int fd) {
+void timer() {
+  this_thread::sleep_for(chrono::seconds(60));
+  stop = true;
+}
+
+void readTemp() {
   /*
     Write the rest of the program below, using the read and write system calls.
   */
@@ -49,14 +56,14 @@ void readTemp(int fd) {
   
   bool inSideDegree;
 
-  while (i < 100) {
+  while (true) {
     char buf[1];
-    int bytes_read = read(fd, buf,1);
+    int bytes_read = read(file_descriptor, buf,1);
     //cout << bytes_read << "\n\n\n";
     if(bytes_read <= 0) {
       continue;
     }
-    if (fd > 0) {
+    if (file_descriptor > 0) {
        // cout << "  " << buf[0];
       if (buf[0]  >= '0' && buf[0]  <= '9' ) {
 
@@ -68,9 +75,9 @@ void readTemp(int fd) {
       }
       else if(inSideDegree == false && info.length() >= 2){
           cout << "~~~ " << atof(info.c_str());
-          temperatures.insert(pair<clock_t, double>(clock(), atof(info.c_str())));
+          temperatures.push(atof(info.c_str()));
           inSideDegree = true;
-          i++;
+          if (stop) break;
         }
         else{
           inSideDegree = false;
@@ -82,19 +89,22 @@ void readTemp(int fd) {
 
 double getAverage() {
   double total;
-  
-  for (map<clock_t, double>::iterator it = temperatures.begin(); it != temperatures.end(); it++) {
-    total += it->second;
+  int size = temperatures.size();
+  while (!temperatures.empty()) {
+    total += temperatures.front();
+    temperatures.pop();
   }
   cout << "total: " << total << endl;
   //cout << "count: " << count << endl;
-  return total / 100;
+  cout << "average: " << total / size << endl;
+  return total / size;
 }
 
 int start_server(int PORT_NUMBER, char* file_name)
 {
       int fd2 = open(file_name, O_RDWR | O_NOCTTY | O_NDELAY);
-  
+      file_descriptor = fd2; /****************************/
+
       if (fd2 < 0) {
         perror("Could not open file");
         exit(1);
@@ -168,7 +178,13 @@ int start_server(int PORT_NUMBER, char* file_name)
       */
       // while (true) {
         this_thread::sleep_for(chrono::seconds(5));
-        readTemp(fd2);
+
+        thread timing (timer);
+        thread getTemp (readTemp);
+
+        timing.join();
+        getTemp.join();
+
         double avg = getAverage();
         string avarage = to_string(avg);
         cout << "aaa " << avarage << endl;
