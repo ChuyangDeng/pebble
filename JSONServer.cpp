@@ -147,6 +147,17 @@ int start_server(int PORT_NUMBER, char* file_name)
 	perror("Listen");
 	exit(1);
       }
+
+      this_thread::sleep_for(chrono::seconds(5));
+
+        thread timing (timer);
+        thread getTemp (readTemp);
+
+        timing.join();
+        getTemp.join();
+
+        double avg = getAverage();
+        string avarage = to_string(avg);
           
       // once you get here, the server is set up and about to start listening
       cout << endl << "Server configured to listen on port " << PORT_NUMBER << endl;
@@ -176,17 +187,7 @@ int start_server(int PORT_NUMBER, char* file_name)
            "name": "cit595"
         }
       */
-      // while (true) {
-        this_thread::sleep_for(chrono::seconds(5));
 
-        thread timing (timer);
-        thread getTemp (readTemp);
-
-        timing.join();
-        getTemp.join();
-
-        double avg = getAverage();
-        string avarage = to_string(avg);
         cout << "aaa " << avarage << endl;
 // "{\n\"name\": \"cit595\"\n}\n";
 
