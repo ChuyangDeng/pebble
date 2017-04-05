@@ -26,6 +26,7 @@ using namespace std;
 
 
 map<clock_t, double> temperatures;
+int count = 100;
 /*
 This code configures the file descriptor for use as a serial port.
 */
@@ -41,12 +42,12 @@ void readTemp(int fd) {
   /*
     Write the rest of the program below, using the read and write system calls.
   */
-  int count = 0;
+  int i = 0;
   string info = "";
   
   bool inSideDegree;
 
-  while (count < 100) {
+  while (i < count) {
     char buf[1];
     int bytes_read = read(fd, buf,1);
     //cout << bytes_read << "\n\n\n";
@@ -67,7 +68,7 @@ void readTemp(int fd) {
           cout << "~~~ " << atof(info.c_str());
           temperatures.insert(pair<clock_t, double>(clock(), atof(info.c_str())));
           inSideDegree = true;
-          count++;
+          i++;
         }
         else{
           inSideDegree = false;
@@ -82,7 +83,6 @@ double getAverage() {
   int count;
   for (map<clock_t, double>::iterator it = temperatures.begin(); it != temperatures.end(); it++) {
     total += it->second;
-    count++;
   }
   cout << "total: " << total << endl;
   cout << "count: " << count << endl;
