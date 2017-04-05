@@ -22,6 +22,8 @@ http://www.binarii.com/files/papers/c_sockets.txt
 #include <cstdio>
 #include <ctime>
 #include <map>
+#include <thread>
+#include <chrono>
 using namespace std;
 
 
@@ -165,15 +167,16 @@ int start_server(int PORT_NUMBER, char* file_name)
         }
       */
       // while (true) {
-
+        this_thread::sleep_for(chrono::seconds(5));
         readTemp(fd2);
         double avg = getAverage();
-        cout << "aaa " << avg << endl;
+        string avarage = to_string(avg);
+        cout << "aaa " << avarage << endl;
 // "{\n\"name\": \"cit595\"\n}\n";
 
 
-          string reply = "{\n\"name\": " + to_string(avg) + "\n}\n";
-
+          // string reply = "{\n\"name\": " + "" + "\n}\n";
+        string reply = "{\n\"name\": \"" + avarage + "\"\n}\n";
       
         // 6. send: send the message over the socket
         // note that the second argument is a char*, and the third is the number of chars
@@ -201,7 +204,6 @@ int main(int argc, char *argv[])
       cout << endl << "Usage: server [port_number]" << endl;
       exit(0);
     }
-
   int PORT_NUMBER = atoi(argv[1]);
   char* file_name = argv[2];
   start_server(PORT_NUMBER, file_name);
