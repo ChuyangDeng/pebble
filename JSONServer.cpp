@@ -153,23 +153,29 @@ int start_server(int PORT_NUMBER, char* file_name)
       string command(token + 1);
 
       string avgStr = to_string(average);
-      cout << "aaa " << avgStr << endl;
-
+      // cout << "aaa " << avgStr << endl;
+      cout << "~~~~~~ " << command << endl;
       if (command == "f") {
         isC = false;
-        cout << "Show Celcius Temperature." << endl;
+        cout << "Show Fahrenheit Temperature." << endl;
+
+        average = average * (9.0/5) + 32;
+        avgStr = to_string(average);
+
         string reply = "{\n\"name\": \"" + avgStr + "\"\n}\n";
-        write(fd, "f", 1);
+        send(fd, reply.c_str(), reply.length(), 0);
+        write(fd2, "f", 1);
       }  else {
         isC = true;
-        cout << "Show Fahrenheit Temperature." << endl;
+        cout << "Show Celcius Temperature." << endl;
         string reply = "{\n\"name\": \"" + avgStr + "\"\n}\n";
-        write(fd, "c", 1);
+        send(fd, reply.c_str(), reply.length(), 0);
+        write(fd2, "c", 1);
       }
       
         // 6. send: send the message over the socket
         // note that the second argument is a char*, and the third is the number of chars
-          send(fd, reply.c_str(), reply.length(), 0);
+          
           close(fd);
 
       }
@@ -187,7 +193,7 @@ int start_server(int PORT_NUMBER, char* file_name)
 
 void* read_temp(void* ){
       fd2 = open(file_name, O_RDWR | O_NOCTTY | O_NDELAY);
-      file_descriptor = fd2; /****************************/
+      // file_descriptor = fd2; /****************************/
 
       if (fd2 < 0) {
         perror("Could not open file");
@@ -206,13 +212,13 @@ void* read_temp(void* ){
 
   while (true) {
     char buf[1];
-    int bytes_read = read(file_descriptor, buf,1);
+    int bytes_read = read(fd2, buf,1);
     //cout << bytes_read << "\n\n\n";
     if(bytes_read <= 0) {
       continue;
     }
-    if (file_descriptor > 0) {
-       cout << "  " << buf[0];
+    if (fd2 > 0) {
+       // cout << "  " << buf[0];
       if (buf[0]  >= '0' && buf[0]  <= '9' ) {
 
         info += buf[0];
@@ -222,7 +228,7 @@ void* read_temp(void* ){
         info += buf[0];
       }
       else if(inSideDegree == false && info.length() >= 2){
-          cout << "~~~ " << atof(info.c_str());
+          // cout << "~~~ " << atof(info.c_str());
           total += atof(info.c_str());
           temperatures.push(atof(info.c_str()));
           average = atof(info.c_str());
