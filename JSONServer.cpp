@@ -26,7 +26,7 @@ http://www.binarii.com/files/papers/c_sockets.txt
 #include <queue>
 using namespace std;
 
-
+int fd2;
 queue<double> temperatures;
 double average = 0.0;
 double total = 0.0;
@@ -121,7 +121,8 @@ int start_server(int PORT_NUMBER, char* file_name)
       // once you get here, the server is set up and about to start listening
       cout << endl << "Server configured to listen on port " << PORT_NUMBER << endl;
       fflush(stdout);
-     int fd;
+      int fd;
+      bool isC = true;
       while (true) {
         // 4. accept: wait here until we get a connection on that port
       int sin_size = sizeof(struct sockaddr_in);
@@ -146,13 +147,25 @@ int start_server(int PORT_NUMBER, char* file_name)
            "name": "cit595"
         }
       */
-        string avgStr = to_string(average);
-        cout << "aaa " << avgStr << endl;
-// "{\n\"name\": \"cit595\"\n}\n";
 
+      char* token = strtok(request, " ");
+      token = strtok(NULL, " ");
+      string command(token + 1);
 
-          // string reply = "{\n\"name\": " + "" + "\n}\n";
+      string avgStr = to_string(average);
+      cout << "aaa " << avgStr << endl;
+
+      if (command == "f") {
+        isC = false;
+        cout << "Show Celcius Temperature." << endl;
         string reply = "{\n\"name\": \"" + avgStr + "\"\n}\n";
+        write(fd, "f", 1);
+      }  else {
+        isC = true;
+        cout << "Show Fahrenheit Temperature." << endl;
+        string reply = "{\n\"name\": \"" + avgStr + "\"\n}\n";
+        write(fd, "c", 1);
+      }
       
         // 6. send: send the message over the socket
         // note that the second argument is a char*, and the third is the number of chars
@@ -173,7 +186,7 @@ int start_server(int PORT_NUMBER, char* file_name)
 } 
 
 void* read_temp(void* ){
-  int fd2 = open(file_name, O_RDWR | O_NOCTTY | O_NDELAY);
+      fd2 = open(file_name, O_RDWR | O_NOCTTY | O_NDELAY);
       file_descriptor = fd2; /****************************/
 
       if (fd2 < 0) {

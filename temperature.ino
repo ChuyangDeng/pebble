@@ -18,7 +18,8 @@
 
 ****************************************************************************/
 
-#include <Wire.h> 
+#include <Wire.h>
+#include <math.h> 
  
 #define BAUD (9600)    /* Serial baud define */
 #define _7SEG (0x38)   /* I2C address for 7-Segment */
@@ -34,6 +35,7 @@
 const byte NumberLookup[16] =   {0x3F,0x06,0x5B,0x4F,0x66,
                                  0x6D,0x7D,0x07,0x7F,0x6F, 
                                  0x77,0x7C,0x39,0x5E,0x79,0x71};
+const byte CharLookup[7] = {0x39, 0x71}; // character C and F
 
 /* Function prototypes */
 void Cal_temp (int&, byte&, byte&, bool&);
@@ -41,6 +43,8 @@ void Dis_7SEG (int, byte, byte, bool);
 void Send7SEG (byte, byte);
 void SerialMonitorPrint (byte, int, bool);
 void UpdateRGB (byte);
+//void DisplayMsg (String, String); // TODO
+//void clearDisplay(); // TODO
 
 /***************************************************************************
  Function Name: setup
@@ -68,9 +72,11 @@ void setup()
  
 void loop() 
 { 
-  int Decimal;
-  byte Temperature_H, Temperature_L, counter, counter2;
-  bool IsPositive;
+  
+  String msg = "";
+  int Decimal, DecimalF = 0; // timeInterval = 1000;
+  byte Temperature_H, Temperature_L, counter, counter2, Temperature_FH = 0, Temperature_FL = 0;
+  bool IsPositive, IsPositiveF = 0, isC = 1;
   
   /* Configure 7-Segment to 12mA segment output current, Dynamic mode, 
      and Digits 1, 2, 3 AND 4 are NOT blanked */
@@ -128,11 +134,46 @@ void loop()
     UpdateRGB (Temperature_H);
     
     /* Display temperature on the 7-Segment */
-    Dis_7SEG (Decimal, Temperature_H, Temperature_L, IsPositive);
-    
+    //Dis_7SEG (Decimal, Temperature_H, Temperature_L, IsPositive);
+    if (isC == 0) {
+    	F_temp (DecimalF, Temperature_FH, IsPositiveF, Decimal, Temperature_H, IsPositive);
+    	Dis_7SEG (DecimalF, Temperature_FH, Temperature_FL, IsPositiveF, 0);
+    } else {
+    	Dis_7SEG (Decimal, Temperature_H, Temperature_L, IsPositive, 1);
+    }
     delay (1000);        /* Take temperature read every 1 second */
+    msg = Serial.readString();
+    if (msg.equals("c")) {
+    	isC = 1;
+    } else if (msg.equals("f")) {
+    	isC = 0;
+    }
   }
 } 
+
+
+/***************************************************************************
+ Function Name: F_temp
+
+ Purpose: 
+   Convert temperature from C to F.
+****************************************************************************/
+
+void F_temp (int& DecimalD, byte& HighF, bool& signF, int DecimalC, byte& HighC, bool& signC) {
+	double C, F;
+	C = HighC + DecimalC / 1000;
+	if (signC == 0) {
+		C = -C;
+	}
+	F = C * 9.0 / 5.0 + 32.0;
+	if (F < 0) {
+		signF = 0;
+	} else {
+		signF = 1;
+	}
+	HighF = (int) F;
+	DeciamlF = (int) ((F - HighF) * 1000);
+}
 
 /***************************************************************************
  Function Name: Cal_temp
@@ -166,7 +207,7 @@ void Cal_temp (int& Decimal, byte& High, byte& Low, bool& sign)
  Purpose: 
    Display number on the 7-segment display.
 ****************************************************************************/
-void Dis_7SEG (int Decimal, byte High, byte Low, bool sign)
+void Dis_7SEG (int Decimal, byte High, byte Low, bool sign, bool isC)
 {
   byte Digit = 4;                 /* Number of 7-Segment digit */
   byte Number;                    /* Temporary variable hold the number to display */
@@ -204,8 +245,11 @@ void Dis_7SEG (int Decimal, byte High, byte Low, bool sign)
   
   if (Digit > 0)                  /* Display decimal point if there is more space on 7-SEG */
   {
-    Number = Decimal / 1000;
-    Send7SEG (Digit,NumberLookup[Number]);
+  	if (isC == 1) {
+  		Send7SEG(Digit, 0x58);
+  	} else {
+  		Send7SEG(Digit, 0x71);
+  	}
     Digit--;
   }
 
