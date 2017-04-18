@@ -140,6 +140,8 @@ void loop()
     	Dis_7SEG (DecimalF, Temperature_FH, Temperature_FL, IsPositiveF, 0);
     } else if (isC == 1) {
     	Dis_7SEG (Decimal, Temperature_H, Temperature_L, IsPositive, 1);
+    } else if (isC == -1) {
+      Stand_By();
     }
 
     delay (1000);        /* Take temperature read every 1 second */
@@ -212,6 +214,15 @@ void Cal_temp (int& Decimal, byte& High, byte& Low, bool& sign)
  Purpose: 
    Display number on the 7-segment display.
 ****************************************************************************/
+
+void Stand_By() {
+  byte Digit = 4;
+  while (Digit > 1) {
+    Send7SEG (Digit, NumberLookup[0]);
+    Digit--;
+  }
+}
+
 void Dis_7SEG (int Decimal, byte High, byte Low, bool sign, bool isC)
 {
   byte Digit = 4;                 /* Number of 7-Segment digit */
