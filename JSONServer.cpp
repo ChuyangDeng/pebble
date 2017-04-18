@@ -28,7 +28,10 @@ using namespace std;
 
 int fd2;
 queue<double> temperatures;
-double average = 0.0;
+double avgTemp = 0.0;
+double minTemp = 0.0;
+double maxTemp = 0.0;
+double curtTemp = 0.0;
 double total = 0.0;
 bool stop = false;
 int file_descriptor = 0;
@@ -50,16 +53,15 @@ void timer() {
   stop = true;
 }
 
-void getAverage() {
+void updateTemp() {
   int size = temperatures.size();
   if (size > 3600) {
     total -= temperatures.front();
     size = 3600;
   }
-  average = total / size;
+  avgTemp = total / size;
   cout << "total: " << total << endl;
-  //cout << "count: " << count << endl;
-  cout << "average: " << average << endl;
+  cout << "average: " << avgTemp << endl;
 }
 
 // void readTemp() {
@@ -152,30 +154,34 @@ int start_server(int PORT_NUMBER, char* file_name)
       token = strtok(NULL, " ");
       string command(token + 1);
 
-      string avgStr = to_string(average);
+      string curtStr = to_string(curtTemp);
       // cout << "aaa " << avgStr << endl;
-      cout << "~~~~~~ " << command << endl;
+      // cout << "~~~~~~ " << command << endl;
       if (command == "f") {
         isC = false;
         cout << "Show Fahrenheit Temperature." << endl;
-
-        average = average * (9.0/5) + 32;
-        avgStr = to_string(average);
-
-        string reply = "{\n\"name\": \"" + avgStr + "\"\n}\n";
+        double curtFTemp = curtTemp * (9.0/5) + 32;
+        curtStr = to_string(curtFTemp);
+        string reply = "{\n\"name\": \"" + curtStr + "\"\n}\n";
         send(fd, reply.c_str(), reply.length(), 0);
         write(fd2, "f", 1);
-      }  else if (command == "c") {
-        isC = true;
-        cout << "Show Celcius Temperature." << endl;
-        string reply = "{\n\"name\": \"" + avgStr + "\"\n}\n";
+      }  else if(command == "avg"){
+        cout << "Show avg Temperature. " << endl;
+        curtStr = to_string(avgTemp);
+        curtStr = "Avg: " + curtStr;
+        string reply = "{\n\"name\": \"" + curtStr + "\"\n}\n";
         send(fd, reply.c_str(), reply.length(), 0);
-        write(fd2, "c", 1);
-      } else if (command == "s") {
+      }  else if (command == "s") {
         cout << "Stand By Mode." << endl;
-        string reply = "{\n\"name\": \"" + "Stand By" + "\"\n}\n";
+        string reply = "{\n\"name\": \" Stand By \"\n}\n";
         send(fd, reply.c_str(), reply.length(), 0);
         write(fd2, "s", 1);
+      } else {
+        isC = true;
+        cout << "Show Celcius Temperature." << endl;
+        string reply = "{\n\"name\": \"" + curtStr + "\"\n}\n";
+        send(fd, reply.c_str(), reply.length(), 0);
+        write(fd2, "c", 1);
       }
       
         // 6. send: send the message over the socket
@@ -234,9 +240,11 @@ void* read_temp(void* ){
       }
       else if(inSideDegree == false && info.length() >= 2){
           // cout << "~~~ " << atof(info.c_str());
-          total += atof(info.c_str());
+          total += atof(info.c_str()); 
+          curtTemp = atof(info.c_str());
           temperatures.push(atof(info.c_str()));
-          average = atof(info.c_str());
+          updateTemp();
+          // average = atof(info.c_str());
           // cout << average << endl;
           inSideDegree = true;
           info = "";
