@@ -165,12 +165,17 @@ int start_server(int PORT_NUMBER, char* file_name)
         string reply = "{\n\"name\": \"" + avgStr + "\"\n}\n";
         send(fd, reply.c_str(), reply.length(), 0);
         write(fd2, "f", 1);
-      }  else {
+      }  else if (command == "c") {
         isC = true;
         cout << "Show Celcius Temperature." << endl;
         string reply = "{\n\"name\": \"" + avgStr + "\"\n}\n";
         send(fd, reply.c_str(), reply.length(), 0);
         write(fd2, "c", 1);
+      } else if (command == "s") {
+        cout << "Stand By Mode." << endl;
+        string reply = "{\n\"name\": \"" + "Stand By" + "\"\n}\n";
+        send(fd, reply.c_str(), reply.length(), 0);
+        write(fd2, "s", 1);
       }
       
         // 6. send: send the message over the socket

@@ -138,15 +138,18 @@ void loop()
     if (isC == 0) {
     	F_temp (DecimalF, Temperature_FH, IsPositiveF, Decimal, Temperature_H, IsPositive);
     	Dis_7SEG (DecimalF, Temperature_FH, Temperature_FL, IsPositiveF, 0);
-    } else {
+    } else if (isC == 1) {
     	Dis_7SEG (Decimal, Temperature_H, Temperature_L, IsPositive, 1);
     }
+
     delay (1000);        /* Take temperature read every 1 second */
     msg = Serial.readString();
     if (msg.equals("c")) {
     	isC = 1;
     } else if (msg.equals("f")) {
     	isC = 0;
+    } else if (msg.equals("s")) {
+      isC = -1;
     }
   }
 } 
@@ -161,7 +164,7 @@ void loop()
 
 void F_temp (int& DecimalD, byte& HighF, bool& signF, int DecimalC, byte& HighC, bool& signC) {
 	double C, F;
-	C = HighC + DecimalC / 1000;
+	C = HighC + DecimalC / 10000.0;
 	if (signC == 0) {
 		C = -C;
 	}
@@ -172,7 +175,9 @@ void F_temp (int& DecimalD, byte& HighF, bool& signF, int DecimalC, byte& HighC,
 		signF = 1;
 	}
 	HighF = (int) F;
-	DeciamlF = (int) ((F - HighF) * 1000);
+	DecimalF = (int) ((F - HighF) * 1000);
+
+
 }
 
 /***************************************************************************
