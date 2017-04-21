@@ -138,15 +138,21 @@ void loop()
     if (isC == 0) {
     	F_temp (DecimalF, Temperature_FH, IsPositiveF, Decimal, Temperature_H, IsPositive);
     	Dis_7SEG (DecimalF, Temperature_FH, Temperature_FL, IsPositiveF, 0);
-    } else {
+    } else if (isC == 1) {
     	Dis_7SEG (Decimal, Temperature_H, Temperature_L, IsPositive, 1);
+    } else if (isC == -1) {
+      Stand_By();
     }
+    
     delay (1000);        /* Take temperature read every 1 second */
+    
     msg = Serial.readString();
     if (msg.equals("c")) {
     	isC = 1;
     } else if (msg.equals("f")) {
     	isC = 0;
+    } else if (msg.equals("s")) {
+      isC = -1;
     }
   }
 } 
@@ -207,6 +213,15 @@ void Cal_temp (int& Decimal, byte& High, byte& Low, bool& sign)
  Purpose: 
    Display number on the 7-segment display.
 ****************************************************************************/
+void Stand_By() {
+  byte Digit = 4;
+  while (Digit > 0) {
+    Send7SEG(Digit, 0x40);
+    Digit--;
+  }
+}
+
+
 void Dis_7SEG (int Decimal, byte High, byte Low, bool sign, bool isC)
 {
   byte Digit = 4;                 /* Number of 7-Segment digit */
