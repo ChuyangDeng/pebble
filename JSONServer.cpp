@@ -26,6 +26,7 @@ http://www.binarii.com/files/papers/c_sockets.txt
 #include <queue>
 using namespace std;
 
+int fd;
 int fd2;
 queue<double> temperatures;
 double avgTemp = 0.0;
@@ -34,9 +35,13 @@ double maxTemp = 0.0;
 double curtTemp = 0.0;
 double total = 0.0;
 bool stop = false;
+int clicks = 0;
 int file_descriptor = 0;
- char* file_name;
-// int count = 100;
+char* file_name;
+string command = "auto";
+bool isServer = true;
+bool isArduino = true;
+
 /*
 This code configures the file descriptor for use as a serial port.
 */
@@ -52,25 +57,46 @@ void timer() {
   this_thread::sleep_for(chrono::seconds(60));
   stop = true;
 }
-
-void updateTemp() {
+void doIterate(){
   int size = temperatures.size();
-  if (size > 3600) {
-    total -= temperatures.front();
-    size = 3600;
+  double max = 0.0;
+  double min = 100.0;
+  for(int i = 0; i < size; i++){
+    double head = temperatures.front();
+    if(head > max){
+      max = head;
+    } if(head < min){
+      min = head;
+    }
+    temperatures.pop();
+    temperatures.push(head);
   }
-  avgTemp = total / size;
-  cout << "total: " << total << endl;
-  cout << "average: " << avgTemp << endl;
+  maxTemp = max;
+  minTemp = min;
 }
 
-// void readTemp() {
+void updateTemp() {
+  bool doIt = false;
+  int size = temperatures.size();
+  doIterate();
+  if (size > 3600) {
+    total -= temperatures.front();
+    if(maxTemp - temperatures.front() == 0.0000000001 || minTemp - temperatures.front() == 0.0000000001){
+      doIt = true;
+    }
+    temperatures.pop();
+    size = 3600;
+  }
+  if(doIt){
+    doIterate();
+  }
   
-//     Write the rest of the program below, using the read and write system calls.
+  avgTemp = total / size;
   
-  
+ 
+  }
 
-// }
+
 
 
 
@@ -123,7 +149,7 @@ int start_server(int PORT_NUMBER, char* file_name)
       // once you get here, the server is set up and about to start listening
       cout << endl << "Server configured to listen on port " << PORT_NUMBER << endl;
       fflush(stdout);
-      int fd;
+      // int fd;
       bool isC = true;
       while (true) {
         // 4. accept: wait here until we get a connection on that port
@@ -140,60 +166,285 @@ int start_server(int PORT_NUMBER, char* file_name)
       request[bytes_received] = '\0';
       cout << "Here comes the message:" << endl;
       cout << request << endl;
-
-
-      
-      // this is the message that we'll send back
-      /* it actually looks like this:
-        {
-           "name": "cit595"
-        }
-      */
-
       char* token = strtok(request, " ");
       token = strtok(NULL, " ");
-      string command(token + 1);
+      command = token + 1;
 
       string curtStr = to_string(curtTemp);
       // cout << "aaa " << avgStr << endl;
       // cout << "~~~~~~ " << command << endl;
       if (command == "f") {
+
+        if (isArduino) cout << "arduino ON" << endl;
+
+        if (!isServer) {
+          cout << "Disconnected from server." << endl;
+          curtStr = "Disconnected Server.";
+          string reply = "{\n\"name\": \"" + curtStr + "\"\n}\n";
+          send(fd, reply.c_str(), reply.length(), 0);
+          write(fd2, "s", 1);
+          break;
+        }
+
+        if (!isArduino) {
+          cout << "Disconnected from arduino." << endl;
+          curtStr = "Disconnected Arduino.";
+          string reply = "{\n\"name\": \"" + curtStr + "\"\n}\n";
+          send(fd, reply.c_str(), reply.length(), 0);
+          cout << reply << endl;
+        } else {
+        clicks = 0;
         isC = false;
         cout << "Show Fahrenheit Temperature." << endl;
         double curtFTemp = curtTemp * (9.0/5) + 32;
         curtStr = to_string(curtFTemp);
         string reply = "{\n\"name\": \"" + curtStr + "\"\n}\n";
         send(fd, reply.c_str(), reply.length(), 0);
-        write(fd2, "f", 1);
-      }  else if(command == "avg"){
+        string writeTo = "f";
+        write(fd2, writeTo.c_str(), 2);
+        cout << "write to arduino: " << writeTo.c_str() << endl;
+        }
+      } 
+      else if(command == "avg"){
+
+        if (isArduino) cout << "arduino ON" << endl;
+
+        if (!isServer) {
+          cout << "Disconnected from server." << endl;
+          curtStr = "Disconnected Server.";
+          string reply = "{\n\"name\": \"" + curtStr + "\"\n}\n";
+          send(fd, reply.c_str(), reply.length(), 0);
+          write(fd2, "s", 1);
+          break;
+        }
+
+        if (!isArduino) {
+          cout << "Disconnected from arduino." << endl;
+          curtStr = "Disconnected Arduino.";
+          string reply = "{\n\"name\": \"" + curtStr + "\"\n}\n";
+          send(fd, reply.c_str(), reply.length(), 0);
+          cout << reply << endl;
+        } else {
+        clicks = 0;
         cout << "Show avg Temperature. " << endl;
-        curtStr = to_string(avgTemp);
-        curtStr = "Avg: " + curtStr;
+        string avgStr = to_string(avgTemp);
+        string reply = "{\n\"name\": \"" + avgStr + "\"\n}\n";
+        send(fd, reply.c_str(), reply.length(), 0);
+        }
+
+      } else if (command == "min") {
+
+        if (isArduino) cout << "arduino ON" << endl;
+
+        if (!isServer) {
+          cout << "Disconnected from server." << endl;
+          curtStr = "Disconnected Server.";
+          string reply = "{\n\"name\": \"" + curtStr + "\"\n}\n";
+          send(fd, reply.c_str(), reply.length(), 0);
+          write(fd2, "s", 1);
+          break;
+        }
+
+        if (!isArduino) {
+          cout << "Disconnected from arduino." << endl;
+          curtStr = "Disconnected Arduino.";
+          string reply = "{\n\"name\": \"" + curtStr + "\"\n}\n";
+          send(fd, reply.c_str(), reply.length(), 0);
+          cout << reply << endl;
+        } else {
+        clicks = 0;
+        cout << "Show min Temperature. " << endl;
+        string minStr = to_string(minTemp);
+        cout << "min temp; " << minStr << endl;
+        string reply = "{\n\"name\": \"" + minStr + "\"\n}\n";
+        send(fd, reply.c_str(), reply.length(), 0);
+        }
+
+      } 
+      else if (command == "max") {
+
+        if (isArduino) cout << "arduino ON" << endl;
+
+        if (!isServer) {
+          cout << "Disconnected from server." << endl;
+          curtStr = "Disconnected Server.";
+          string reply = "{\n\"name\": \"" + curtStr + "\"\n}\n";
+          send(fd, reply.c_str(), reply.length(), 0);
+          write(fd2, "s", 1);
+          break;
+        }
+
+        if (!isArduino) {
+          cout << "Disconnected from arduino." << endl;
+          curtStr = "Disconnected Arduino.";
+          string reply = "{\n\"name\": \"" + curtStr + "\"\n}\n";
+          send(fd, reply.c_str(), reply.length(), 0);
+          cout << reply << endl;
+        } else {
+        clicks = 0;
+        cout << "Show max Temperature. " << endl;
+        string maxStr = to_string(maxTemp);
+        cout << "max temp; " << maxStr << endl;
+        string reply = "{\n\"name\": \"" + maxStr + "\"\n}\n";
+        send(fd, reply.c_str(), reply.length(), 0);
+        }
+      }  
+      else if (command == "s") {
+
+        if (isArduino) cout << "arduino ON" << endl;
+
+        if (!isServer) {
+          cout << "Disconnected from server." << endl;
+          curtStr = "Disconnected Server.";
+          string reply = "{\n\"name\": \"" + curtStr + "\"\n}\n";
+          send(fd, reply.c_str(), reply.length(), 0);
+          write(fd2, "s", 1);
+          break;
+        }
+
+        if (!isArduino) {
+          cout << "Disconnected from arduino." << endl;
+          curtStr = "Disconnected Arduino.";
+          string reply = "{\n\"name\": \"" + curtStr + "\"\n}\n";
+          send(fd, reply.c_str(), reply.length(), 0);
+          cout << reply << endl;
+        } else {
+        clicks = 0;
+        cout << "Stand By." << endl;
+        curtStr = "Stand By";
         string reply = "{\n\"name\": \"" + curtStr + "\"\n}\n";
         send(fd, reply.c_str(), reply.length(), 0);
-      }  else if (command == "s") {
-        cout << "Stand By Mode." << endl;
-        string reply = "{\n\"name\": \" Stand By \"\n}\n";
-        send(fd, reply.c_str(), reply.length(), 0);
-        write(fd2, "s", 1);
-      } else {
-        isC = true;
-        cout << "Show Celcius Temperature." << endl;
+        string writeTo = "s";
+        write(fd2, writeTo.c_str(), 2);
+        cout << "write to arduino: " << writeTo.c_str() << endl;
+        }
+
+      } else if(command == "click") {
+
+        if (isArduino) cout << "arduino ON" << endl;
+
+        if (!isServer) {
+          cout << "Disconnected from server." << endl;
+          curtStr = "Disconnected Server.";
+          string reply = "{\n\"name\": \"" + curtStr + "\"\n}\n";
+          send(fd, reply.c_str(), reply.length(), 0);
+          write(fd2, "s", 1);
+          break;
+        }
+
+        if (!isArduino) {
+          cout << "Disconnected from arduino." << endl;
+          curtStr = "Disconnected Arduino.";
+          string reply = "{\n\"name\": \"" + curtStr + "\"\n}\n";
+          send(fd, reply.c_str(), reply.length(), 0);
+          cout << reply << endl;
+        } else {
+        cout << "Count. "<< endl;
+        clicks++;
+        curtStr = "Current clicks: " + to_string(clicks);
         string reply = "{\n\"name\": \"" + curtStr + "\"\n}\n";
         send(fd, reply.c_str(), reply.length(), 0);
-        write(fd2, "c", 1);
+        string writeTo = "k";
+        write(fd2, writeTo.c_str() , 2);
+        cout << "write to arduino: " << writeTo.c_str() << endl;
+        }
+
+      } else if(command == "auto"){
+
+        if (isArduino) cout << "arduino ON" << endl;
+
+        if (!isServer) {
+          cout << "Disconnected from server." << endl;
+          curtStr = "Disconnected Server.";
+          string reply = "{\n\"name\": \"" + curtStr + "\"\n}\n";
+          send(fd, reply.c_str(), reply.length(), 0);
+          write(fd2, "s", 1);
+          break;
+        }
+
+        if (!isArduino) {
+          cout << "Disconnected from arduino." << endl;
+          curtStr = "Disconnected Arduino.";
+          string reply = "{\n\"name\": \"" + curtStr + "\"\n}\n";
+          send(fd, reply.c_str(), reply.length(), 0);
+          cout << reply << endl;
+        } else {
+        curtStr = to_string(curtTemp);
+        clicks = 0;
+        cout << "Show auto Celcius Temperature." << endl;
+        string reply = "{\n\"name\": \"" + curtStr + "\"\n}\n";
+        send(fd, reply.c_str(), reply.length(), 0);
+        cout << reply << endl;
+        string writeTo = "c";
+        write(fd2, writeTo.c_str(), 2);
+        cout << "write to arduino: " << writeTo.c_str() << endl;
+        }
+
+    } else if (command == "ulong"){
+
+      if (isArduino) cout << "arduino ON" << endl;
+
+      if (!isServer) {
+          cout << "Disconnected from server." << endl;
+          curtStr = "Disconnected Server.";
+          string reply = "{\n\"name\": \"" + curtStr + "\"\n}\n";
+          send(fd, reply.c_str(), reply.length(), 0);
+          write(fd2, "s", 1);
+          break;
       }
-      
-        // 6. send: send the message over the socket
-        // note that the second argument is a char*, and the third is the number of chars
+
+      if (!isArduino) {
+          cout << "Disconnected from arduino." << endl;
+          curtStr = "Disconnected Arduino.";
+          string reply = "{\n\"name\": \"" + curtStr + "\"\n}\n";
+          send(fd, reply.c_str(), reply.length(), 0);
+          cout << reply << endl;
+        } else {
+        clicks = 0;
+      cout << "Red." << endl;
+      curtStr = "Red.";
+      string reply = "{\n\"name\": \"" + curtStr + "\"\n}\n";
+      send(fd, reply.c_str(), reply.length(), 0);
+      string writeTo = "r";
+      write(fd2, writeTo.c_str(), 2);
+      cout << "write to arduino: " << writeTo.c_str() << endl;
+        }
+
+    } else if (command == "dlong"){
+
+      if (isArduino) cout << "arduino ON" << endl;
+
+      if (!isServer) {
+          cout << "Disconnected from server." << endl;
+          curtStr = "Disconnected Server.";
+          string reply = "{\n\"name\": \"" + curtStr + "\"\n}\n";
+          send(fd, reply.c_str(), reply.length(), 0);
+          write(fd2, "s", 1);
+          break;
+      }
+
+      if (!isArduino) {
+          cout << "Disconnected from arduino." << endl;
+          curtStr = "Disconnected Arduino.";
+          string reply = "{\n\"name\": \"" + curtStr + "\"\n}\n";
+          send(fd, reply.c_str(), reply.length(), 0);
+          cout << reply << endl;
+        } else {
+      clicks = 0;
+      cout << "Green." << endl;
+      curtStr = "Green";
+      string reply = "{\n\"name\": \"" + curtStr + "\"\n}\n";
+      send(fd, reply.c_str(), reply.length(), 0);
+      string writeTo = "g";
+      write(fd2, writeTo.c_str(), 2);
+      cout << "write to arduino: " << writeTo.c_str() << endl;
+        }
+
+    }
           
           close(fd);
 
       }
-    
-       // }
-     
-      //printf("Server sent message: %s\n", reply);
 
       // 7. close: close the socket connection
       close(sock);
@@ -221,17 +472,14 @@ void* read_temp(void* ){
   
   bool inSideDegree;
 
-  while (true) {
+  while (isServer && isArduino) {
     char buf[1];
     int bytes_read = read(fd2, buf,1);
-    //cout << bytes_read << "\n\n\n";
     if(bytes_read <= 0) {
       continue;
     }
     if (fd2 > 0) {
-       // cout << "  " << buf[0];
       if (buf[0]  >= '0' && buf[0]  <= '9' ) {
-
         info += buf[0];
         inSideDegree = true;
       }
@@ -239,21 +487,39 @@ void* read_temp(void* ){
         info += buf[0];
       }
       else if(inSideDegree == false && info.length() >= 2){
-          // cout << "~~~ " << atof(info.c_str());
           total += atof(info.c_str()); 
           curtTemp = atof(info.c_str());
           temperatures.push(atof(info.c_str()));
           updateTemp();
-          // average = atof(info.c_str());
-          // cout << average << endl;
           inSideDegree = true;
           info = "";
-          // if (stop) break;
         }
         else{
           inSideDegree = false;
         }
     }
+  }
+  pthread_exit(NULL);
+}
+
+void* quitServer(void*) {
+  cout << "Ready to quit server." << endl;
+  string input = "";
+  do {
+    cin >> input;
+  } while (input != "q");
+  isServer = false;
+  pthread_exit(NULL);
+}
+
+void* quitArduino(void*) {
+  cout << "Ready to quit arduino." << endl;
+  isArduino = true;
+  while (isServer) {
+    this_thread::sleep_for(chrono::seconds(1));
+    fd2 = open(file_name, O_RDWR | O_NOCTTY | O_NDELAY);
+    if (fd2 < 0) isArduino = false;
+    else isArduino = true;
   }
   pthread_exit(NULL);
 }
@@ -272,9 +538,14 @@ int main(int argc, char *argv[])
   // pthread_mutex_init(&lock, NULL);
 
   pthread_t thread_id2;
+  pthread_t killServer;
+  pthread_t killArduino;
   pthread_create(&thread_id2, NULL, read_temp, NULL);
-
-
+  this_thread::sleep_for(chrono::seconds(2));
+  pthread_create(&killServer, NULL, quitServer, NULL);
+  this_thread::sleep_for(chrono::seconds(2));
+  pthread_create(&killArduino, NULL, quitArduino, NULL);
+  this_thread::sleep_for(chrono::seconds(2));
 
   start_server(PORT_NUMBER, file_name);
 }
