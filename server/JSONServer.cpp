@@ -179,13 +179,6 @@ int start_server(int PORT_NUMBER, char* file_name)
       }
 
       this_thread::sleep_for(chrono::seconds(5));
-
-        // thread timing (timer);
-        // thread getTemp (readTemp);
-
-        // timing.join();
-        // getTemp.join();
-
           
       // once you get here, the server is set up and about to start listening
       cout << endl << "Server configured to listen on port " << PORT_NUMBER << endl;
@@ -212,8 +205,7 @@ int start_server(int PORT_NUMBER, char* file_name)
       command = token + 1;
 
       string curtStr = to_string(curtTemp);
-      // cout << "aaa " << avgStr << endl;
-      // cout << "~~~~~~ " << command << endl;
+      
       if (command == "f") {
 
         if (isArduino) cout << "arduino ON" << endl;
