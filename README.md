@@ -1,2 +1,1 @@
-# pebble
-cit595 project#2
+# pebble + arduino
